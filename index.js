@@ -7,12 +7,16 @@ const express = require('express');
 const app = express();
 const port = 3000;
 var fs = require("fs");
+var xmlparser = require('express-xml-bodyparser');
+var js2xmlparser = require("js2xmlparser");
+var convert = require('xml-js');
 
 app.listen(port);
 console.log('Server started at http://localhost:' + port);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(xmlparser());
 
 //Open the Menu
 //Menu shows us POST or PUT buttons that will take us to one of those two forms
@@ -38,8 +42,8 @@ app.get("/rest/list/", function(req, res){
 
     async function run() {
         try {
-            const database = client.db("tickets");
-            const ticketDb = database.collection("Ticket Collection");
+            const database = client.db("jbdb");
+            const ticketDb = database.collection("cmps415mongodb");
         
             const query = {}; //this means that all tickets are selected
         
@@ -75,8 +79,8 @@ app.get("/rest/ticket/:ticketId", function(req, res) {
 
     async function run() {
         try {
-            const database = client.db("tickets");
-            const ticketDb = database.collection("Ticket Collection");
+            const database = client.db("jbdb");
+            const ticketDb = database.collection("cmps415mongodb");
       
             const query = { ticketID: req.params.ticketId };
       
@@ -112,8 +116,8 @@ app.delete("/rest/ticket/:ticketId", function(req, res) {
 
     async function run() {
         try {
-            const database = client.db("tickets");
-            const ticketDb = database.collection("Ticket Collection");
+            const database = client.db("jbdb");
+            const ticketDb = database.collection("cmps415mongodb");
       
             const query = { ticketID: req.params.ticketId };
       
@@ -158,42 +162,37 @@ app.post("/rest/ticket/postTicket", function(req, res) {
 
     async function run() {
         try {
-            const database = client.db("tickets");
-            const ticketDb = database.collection("Ticket Collection");
+            const database = client.db("jbdb");
+            const ticketDb = database.collection("cmps415mongodb");
 
-            const ticketID = req.body.ticketID;
-            const created_at = req.body.created_at;
-            const updated_at = req.body.updated_at;
-            const type = req.body.type;
-            const subject = req.body.subject;
-            const description = req.body.description;
-            const priority = req.body.priority;
-            const status = req.body.status;
-            const recipient = req.body.recipient;
-            const submitter = req.body.submitter;
-            const assignee_id = req.body.assignee_id;
-            const follower_ids = req.body.follower_ids;
-            const tags = req.body.tags;
+            const created_at = new Date();
+            const updated_at = new Date();
+            
+
+
+            const xml = req.body;
+            
 
             //creating the ticket of type JSON
             const ticket = {
-                ticketID: ticketID,
+                ticketID: xml.ticketid,
                 created_at: created_at,
                 updated_at: updated_at,
-                type: type,
-                subject: subject,
-                description: description,
-                priority: priority,
-                status: status,
-                recipient: recipient,
-                submitter: submitter,
-                assignee_id: assignee_id,
-                follower_ids: follower_ids,
-                tags: tags
+                type: xml.type,
+                subject: xml.subject,
+                description: xml.description,
+                priority: xml.priority,
+                status: xml.status,
+                recipient: xml.recipient,
+                submitter: xml.submitter,
+                assignee_id: xml.assignee_id,
+                follower_ids: xml.follower_ids,
+                tags: xml.tags
             };
 
             //here we don't handle much errors because all fields are pre-filled so if a mistake has been made
             //the ticket should be deleted and then added again
+    
             const addTicket = await ticketDb.insertOne(ticket);
             console.log(addTicket);
             res.json(ticket);
@@ -230,8 +229,8 @@ app.post("/rest/ticket/updateTicket", function(req, res) {
 
     async function run() {
         try {
-            const database = client.db("tickets");
-            const ticketDb = database.collection("Ticket Collection");
+            const database = client.db("jbdb");
+            const ticketDb = database.collection("cmps415mongodb");
 
             const ticketID = req.body.ticketID;
             const created_at = req.body.created_at;
