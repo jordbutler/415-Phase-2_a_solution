@@ -18,9 +18,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(xmlparser());
 
-//Open the Menu
-//Menu shows us POST or PUT buttons that will take us to one of those two forms
-app.get('/menu', function(req, res) {
+
+app.get('/', function(req, res) {
     res.setHeader('Content-Type', 'text/html');
     fs.readFile('./menu.html', 'utf8', (err, contents) => {
       if(err) {
@@ -37,7 +36,7 @@ app.get('/menu', function(req, res) {
 // GET All tickets
 
 app.get("/rest/list/", function(req, res){
-    //establish the new connection with the mongodb
+    
     const client = new MongoClient(uri);
 
     async function run() {
@@ -45,23 +44,23 @@ app.get("/rest/list/", function(req, res){
             const database = client.db("jbdb");
             const ticketDb = database.collection("cmps415mongodb");
         
-            const query = {}; //this means that all tickets are selected
+            const query = {}; 
         
-            //tickets is an array that holds all tickets that are of type JSON
+            
             const tickets = await ticketDb.find(query).toArray(); 
-            //if array is 0 there's no tickets
+           
             if (tickets.length === 0) {
                 res.status(404).send("Tickets do not exist!");
             } else {
                 console.log(js2xmlparser.parse("tickets", tickets));
-                //return the tickets
+                
                 res.json(js2xmlparser.parse("tickets", tickets));
             }
         } catch (err) {
             console.log(err);
             res.status(500).send("Error!");
         }finally {
-            // Ensures that the client will close when you finish/error
+           
             await client.close();
         }
     }
@@ -72,8 +71,7 @@ app.get("/rest/list/", function(req, res){
 
 app.get("/rest/ticket/:ticketId", function(req, res) {
     const client = new MongoClient(uri);
-    //search key is what we are looking for in the database JSON
-    //it needs to match the field "ticketID" and to match the value of that field
+    
     const searchKey = "ticketID: '" + req.params.ticketId + "'";
     console.log("Looking for: " + searchKey);
 
@@ -84,33 +82,32 @@ app.get("/rest/ticket/:ticketId", function(req, res) {
       
             const query = { ticketID: req.params.ticketId };
       
-            //find the ticket and store it in "ticket"
+            
             const ticket = await ticketDb.findOne(query);
-            //checking if ticket exists
-            if (ticket === null) { //it's null when it doesn't exist
+            
+            if (ticket === null) { 
                 res.status(404).send("Ticket does not exist!");
             } else {
                 console.log(js2xmlparser.parse("tickets", ticket));
-                //return the ticket
+                
                 res.json(js2xmlparser.parse("tickets", ticket));
             }
         } catch (err) {
             console.log(err);
             res.status(500).send("Error!")
         } finally {
-            // Ensures that the client will close when you finish/error
+            
             await client.close();
         }
     }
     run().catch(console.dir);
 });
 
-// A DELETE request
+// DELETE request
 
 app.delete("/rest/ticket/:ticketId", function(req, res) {
     const client = new MongoClient(uri);
-    //search key is what we are looking for in the database JSON
-    //it needs to match the field "ticketID" and to match the value of that field
+   
     const searchKey = "ticketID: '" + req.params.ticketId + "'";
     console.log("Looking for: " + searchKey);
 
@@ -121,9 +118,9 @@ app.delete("/rest/ticket/:ticketId", function(req, res) {
       
             const query = { ticketID: req.params.ticketId };
       
-            //find the ticket and delete it
+            
             const deleteTicket = await ticketDb.deleteOne(query);
-            //checking if we deleted the ticket
+            
             if (deleteTicket.deletedCount === 0) {
                 res.status(404).send("Ticket does not exist!");
             } else {
@@ -134,14 +131,14 @@ app.delete("/rest/ticket/:ticketId", function(req, res) {
             console.log(err);
             res.status(500).send("Error!")
         } finally {
-            // Ensures that the client will close when you finish/error
+            
             await client.close();
         }
     }
     run().catch(console.dir);
 });
 
-// A POST request
+// POST request
 
 app.get('/postform', function(req, res) {
     res.setHeader('Content-Type', 'text/html');
@@ -173,31 +170,30 @@ app.get('/postform', function(req, res) {
             const xml = req.body;
             
 
-            //creating the ticket of type JSON
+            
             const ticket = {
-                ticketID: xml.ticketid,
+                ticketID: xml.ticket.ticketid[0],
                 created_at: created_at,
                 updated_at: updated_at,
-                type: xml.type,
-                subject: xml.subject,
-                description: xml.description,
-                priority: xml.priority,
-                status: xml.status,
-                recipient: xml.recipient,
-                submitter: xml.submitter,
-                assignee_id: xml.assignee_id,
-                follower_ids: xml.follower_ids,
-                tags: xml.tags
+                type: xml.ticket.type[0],
+                subject: xml.ticket.subject[0],
+                description: xml.ticket.description[0],
+                priority: xml.ticket.priority[0],
+                status: xml.ticket.status[0],
+                recipient: xml.ticket.recipient[0],
+                submitter: xml.ticket.submitter[0],
+                assignee_id: xml.ticket.assignee_id[0],
+                follower_ids: xml.ticket.follower_ids,
+                tags: xml.ticket.tags
             };
-    
             const addTicket = await ticketDb.insertOne(ticket);
             console.log(addTicket);
-            res.json(ticket);
+           res.json(ticket);
         } catch (err) {
             console.log(err);
             res.status(500).send("Error!")
         } finally {
-            // Ensures that the client will close when you finish/error
+            
             await client.close();
         }
     }
@@ -227,7 +223,7 @@ app.post("/rest/ticket/postTicket", function(req, res) {
             const tags = req.body.tags;
             
 
-            //creating the ticket of type JSON
+            
             const ticket = {
                 ticketID: ticketID,
                 created_at: created_at,
@@ -243,9 +239,6 @@ app.post("/rest/ticket/postTicket", function(req, res) {
                 follower_ids: follower_ids,
                 tags: tags
             };
-
-            //here we don't handle much errors because all fields are pre-filled so if a mistake has been made
-            //the ticket should be deleted and then added again
     
             const addTicket = await ticketDb.insertOne(ticket);
             console.log(addTicket);
@@ -254,14 +247,14 @@ app.post("/rest/ticket/postTicket", function(req, res) {
             console.log(err);
             res.status(500).send("Error!")
         } finally {
-            // Ensures that the client will close when you finish/error
+            
             await client.close();
         }
     }
     run().catch(console.dir);
 });
 
-// A PUT request
+// PUT request
 
 app.get('/putform', function(req, res) {
     res.setHeader('Content-Type', 'text/html');
@@ -287,8 +280,7 @@ app.post("/rest/ticket/updateTicket", function(req, res) {
             const ticketDb = database.collection("cmps415mongodb");
 
             const ticketID = req.body.ticketID;
-            const created_at = req.body.created_at;
-            const updated_at = req.body.updated_at;
+            const updated_at = new Date();
             const type = req.body.type;
             const subject = req.body.subject;
             const description = req.body.description;
@@ -300,10 +292,9 @@ app.post("/rest/ticket/updateTicket", function(req, res) {
             const follower_ids = req.body.follower_ids;
             const tags = req.body.tags;
 
-            //creating the ticket of type JSON
+            
             const ticket = {
                 ticketID: ticketID,
-                created_at: created_at,
                 updated_at: updated_at,
                 type: type,
                 subject: subject,
@@ -317,9 +308,6 @@ app.post("/rest/ticket/updateTicket", function(req, res) {
                 tags: tags
             };
 
-            //Here we put the ticketID into the field and then fill out rest of the fields
-            //Then findOneAndUpdate searches for that ticketID  and if found -> $set updates the whole ticket
-            //if not we throw an error
             const updateTicket = await ticketDb.findOneAndUpdate({ ticketID: ticketID }, { $set: ticket });
             if (!updateTicket) {
                 res.status(404).send("Ticket does not exist!");
@@ -332,7 +320,7 @@ app.post("/rest/ticket/updateTicket", function(req, res) {
             console.log(err);
             res.status(500).send("Error!")
         } finally {
-            // Ensures that the client will close when you finish/error
+            
             await client.close();
         }
     }
@@ -357,30 +345,26 @@ app.post("/rest/xml/updateTicket", function(req, res) {
             const xml = req.body;
 
             
-            const created_at = new Date();
             const updated_at = new Date();
             
 
-            //creating the ticket of type JSON
+           
             const ticket = {
-                ticketID: xml.ticketid,
-                created_at: created_at,
+                ticketID: xml.ticket.ticketid[0],
                 updated_at: updated_at,
-                type: xml.type,
-                subject: xml.subject,
-                description: xml.description,
-                priority: xml.priority,
-                status: xml.status,
-                recipient: xml.recipient,
-                submitter: xml.submitter,
-                assignee_id: xml.assignee_id,
-                follower_ids: xml.follower_ids,
-                tags: xml.tags
+                type: xml.ticket.type[0],
+                subject: xml.ticket.subject[0],
+                description: xml.ticket.description[0],
+                priority: xml.ticket.priority[0],
+                status: xml.ticket.status[0],
+                recipient: xml.ticket.recipient[0],
+                submitter: xml.ticket.submitter[0],
+                assignee_id: xml.ticket.assignee_id[0],
+                follower_ids: xml.ticket.follower_ids,
+                tags: xml.ticket.tags
             };
 
-            //Here we put the ticketID into the field and then fill out rest of the fields
-            //Then findOneAndUpdate searches for that ticketID  and if found -> $set updates the whole ticket
-            //if not we throw an error
+           
             const updateTicket = await ticketDb.findOneAndUpdate({ ticketID: ticket.ticketID }, { $set: ticket });
             if (!updateTicket) {
                 res.status(404).send("Ticket does not exist!");
@@ -393,7 +377,7 @@ app.post("/rest/xml/updateTicket", function(req, res) {
             console.log(err);
             res.status(500).send("Error!")
         } finally {
-            // Ensures that the client will close when you finish/error
+            
             await client.close();
         }
     }
